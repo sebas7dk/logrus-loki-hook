@@ -8,7 +8,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-var supportedLevels = []logrus.Level{logrus.DebugLevel, logrus.InfoLevel, logrus.WarnLevel, logrus.ErrorLevel}
+var supportedLevels = []logrus.Level{logrus.TraceLevel, logrus.DebugLevel, logrus.InfoLevel, logrus.WarnLevel, logrus.ErrorLevel}
 
 // Config defines configuration for hook for Loki
 type Config struct {
@@ -49,8 +49,8 @@ func NewHook(c *Config) (*Hook, error) {
 		Labels:             c.Labels,
 		BatchWait:          c.BatchWait,
 		BatchEntriesNumber: c.BatchEntriesNumber,
-		SendLevel:          promtail.INFO,
-		PrintLevel:         promtail.ERROR,
+		SendLevel:          promtail.DEBUG,
+		PrintLevel:         promtail.DISABLE,
 	}
 	loki, err := promtail.NewClientJson(conf)
 	if err != nil {
@@ -63,18 +63,22 @@ func NewHook(c *Config) (*Hook, error) {
 
 // Fire implements interface for logrus
 func (hook *Hook) Fire(entry *logrus.Entry) error {
-	switch entry.Level.String() {
-	case "debug":
-		hook.client.Debugf(entry.Level.String())
-	case "info":
-		hook.client.Infof(entry.Level.String())
-	case "warning":
-		hook.client.Warnf(entry.Level.String())
-	case "error":
-		hook.client.Errorf(entry.Level.String())
+
+	switch entry.Level {
+	case logrus.DebugLevel:
+		hook.client.Debugf(entry.Message)
+	case logrus.InfoLevel:
+		hook.client.Infof(entry.Message)
+	case logrus.WarnLevel:
+		hook.client.Warnf(entry.Message)
+	case logrus.ErrorLevel:
+		hook.client.Errorf(entry.Message)
+	case logrus.TraceLevel:
+		hook.client.Debugf(entry.Message)
 	default:
 		return fmt.Errorf("unknown log level")
 	}
+
 	return nil
 }
 
