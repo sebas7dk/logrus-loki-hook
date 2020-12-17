@@ -25,7 +25,7 @@ func (c *Config) setDefault() {
 	if c.Labels == "" {
 		c.Labels = "{source=\"" + "test" + "\",job=\"" + "job" + "\"}"
 	}
-	if c.BatchWait == time.Second {
+	if c.BatchWait == 0 {
 		c.BatchWait = 5 * time.Second
 	}
 	if c.BatchEntriesNumber == 0 {
@@ -63,18 +63,22 @@ func NewHook(c *Config) (*Hook, error) {
 
 // Fire implements interface for logrus
 func (hook *Hook) Fire(entry *logrus.Entry) error {
+	msg, err := entry.String()
+	if err != nil {
+		return err
+	}
 
 	switch entry.Level {
 	case logrus.DebugLevel:
-		hook.client.Debugf(entry.Message)
+		hook.client.Debugf(msg)
 	case logrus.InfoLevel:
-		hook.client.Infof(entry.Message)
+		hook.client.Infof(msg)
 	case logrus.WarnLevel:
-		hook.client.Warnf(entry.Message)
+		hook.client.Warnf(msg)
 	case logrus.ErrorLevel:
-		hook.client.Errorf(entry.Message)
+		hook.client.Errorf(msg)
 	case logrus.TraceLevel:
-		hook.client.Debugf(entry.Message)
+		hook.client.Debugf(msg)
 	default:
 		return fmt.Errorf("unknown log level")
 	}
